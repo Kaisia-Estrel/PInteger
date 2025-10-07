@@ -1,0 +1,217 @@
+import Data.Nat
+
+import PInteger
+ 
+%default total
+
+-- left_MultZero : (a : PInteger) -> Pos 0 * a = Pos 0
+-- left_MultZero a = Refl
+--
+-- right_MultZero : (a : PInteger) -> a * Pos 0 = Pos 0
+-- right_MultZero (Pos 0) = Refl
+-- right_MultZero (Pos 1) = Refl
+-- right_MultZero (Pos (S (S k))) = Refl
+-- right_MultZero (Neg 0) = Refl
+-- right_MultZero (Neg 1) = rewrite pos0_neg0_equality in Refl
+-- right_MultZero (Neg (S (S k))) = Refl
+--
+-- left_MultPosOne : (a : PInteger) -> Pos 1 * a = a
+-- left_MultPosOne (Pos 0) = Refl
+-- left_MultPosOne (Pos (S k)) = Refl
+-- left_MultPosOne (Neg 0) = rewrite pos0_neg0_equality in Refl
+-- left_MultPosOne (Neg (S k)) = Refl
+--
+-- right_MultPosOne : (a : PInteger) -> a * Pos 1 = a
+-- right_MultPosOne (Pos 0) = Refl
+-- right_MultPosOne (Pos 1) = Refl
+-- right_MultPosOne (Pos (S (S k))) = Refl
+-- right_MultPosOne (Neg 0) = rewrite pos0_neg0_equality in Refl
+-- right_MultPosOne (Neg 1) = Refl
+-- right_MultPosOne (Neg (S (S k))) = Refl
+--
+-- left_MultNegOne : (a : PInteger) -> Neg 1 * a = negate a
+-- left_MultNegOne (Pos 0) = rewrite pos0_neg0_equality in Refl
+-- left_MultNegOne (Pos 1) = Refl
+-- left_MultNegOne (Pos (S (S k))) = Refl
+-- left_MultNegOne (Neg 0) = Refl
+-- left_MultNegOne (Neg (S 0)) = Refl
+-- left_MultNegOne (Neg (S (S k))) = Refl
+--
+-- right_MultNegOne : (a : PInteger) -> a * Neg 1 = negate a
+-- right_MultNegOne (Pos 0) = rewrite pos0_neg0_equality in Refl
+-- right_MultNegOne (Pos 1) = Refl
+-- right_MultNegOne (Pos (S (S k))) = Refl
+-- right_MultNegOne (Neg 0) = Refl
+-- right_MultNegOne (Neg (S 0)) = Refl
+-- right_MultNegOne (Neg (S (S k))) = Refl
+--
+-- mult_plus_s_pos : (a : PInteger) -> (b : Nat) -> a * Pos (S b) = a + (a * Pos b) 
+-- mult_plus_s_pos a 0 = rewrite right_MultZero a in rewrite right_MultPosOne a in Refl
+-- mult_plus_s_pos (Pos 0) 1 = Refl
+-- mult_plus_s_pos (Pos 1) 1 = Refl
+-- mult_plus_s_pos (Pos (S (S k))) 1 = Refl
+-- mult_plus_s_pos (Neg 0) 1 = rewrite pos0_neg0_equality in Refl
+-- mult_plus_s_pos (Neg 1) 1 = Refl
+-- mult_plus_s_pos (Neg (S (S k))) 1 = Refl
+-- mult_plus_s_pos (Pos 0) (S k) = Refl
+-- mult_plus_s_pos (Pos (S 0)) (S k) = Refl
+-- mult_plus_s_pos (Pos (S (S j))) (S k) = Refl
+-- mult_plus_s_pos (Neg 0) (S k) = rewrite pos0_neg0_equality in Refl
+-- mult_plus_s_pos (Neg 1) (S k) = rewrite left_MultNegOne (Pos (S k)) in Refl
+-- mult_plus_s_pos (Neg (S (S j))) (S k) = Refl
+--
+-- same_sign_mult_eq : (a,b : Nat) -> Neg a * Neg b = Pos a * Pos b
+-- same_sign_mult_eq 0 b = Refl
+-- same_sign_mult_eq (S k) 0 = Refl
+-- same_sign_mult_eq 1 (S j) = Refl
+-- same_sign_mult_eq (S (S k)) 1 = Refl
+-- same_sign_mult_eq (S (S k)) (S (S j)) = Refl
+--
+-- mult_plus_s_neg : (a : PInteger) -> (b : Nat) -> a * Neg (S b) = negate a + (a * Neg b) 
+-- mult_plus_s_neg (Pos k) 0 = rewrite right_MultNegOne (Pos k) in 
+--                             rewrite sym pos0_neg0_equality in 
+--                             rewrite right_MultZero (Pos k) in Refl
+-- mult_plus_s_neg (Neg k) 0 = 
+--     rewrite right_MultNegOne (Neg k) in 
+--     rewrite sym pos0_neg0_equality in 
+--     rewrite right_MultZero (Neg k) in 
+--       Refl
+-- mult_plus_s_neg (Pos 0) (S k) = pos0_neg0_equality
+-- mult_plus_s_neg (Pos 1) (S k) = Refl
+-- mult_plus_s_neg (Pos (S (S j))) (S k) = Refl
+-- mult_plus_s_neg (Neg 0) (S k) = Refl
+-- mult_plus_s_neg (Neg 1) (S k) = Refl
+-- mult_plus_s_neg (Neg (S (S j))) (S k) = rewrite same_sign_mult_eq (S (S j)) (S k) in Refl
+--
+-- lift_pos_mult : (a,b : Nat) -> Pos a * Pos b = Pos (a * b)
+-- lift_pos_mult 0 b = Refl
+-- lift_pos_mult (S k) 0 = rewrite mult_z_right k in Refl
+-- lift_pos_mult (S 0) (S j) = rewrite plusZeroRightNeutral j in Refl
+-- lift_pos_mult (S (S k)) (S 0) = rewrite nat_mult_1_identity k in Refl
+-- lift_pos_mult (S (S a)) (S (S b)) = 
+--   rewrite lift_pos_mult (S (S a)) (S b)  in 
+--   rewrite nat_mult_commutes a (S b) in
+--   rewrite nat_mult_commutes a (S (S b)) in
+--   rewrite nat_mult_commutes b a in
+--   rewrite mult_plus_s a b in
+--   rewrite nat_mult_commutes a (S b) in
+--   rewrite mult_plus_s (S b) a in
+--   rewrite mult_plus_s (S b) (S a) in
+--   rewrite nat_mult_commutes (S b) (S (S a)) in
+--   rewrite mult_plus_s (S (S a)) (S b) in
+--   rewrite nat_mult_commutes b a in
+--   rewrite mult_plus_s a b in
+--   rewrite mult_plus_s a (S b) in
+--     Refl
+--
+-- swap_signs : (a,b : Nat) -> Pos a * Neg b = Neg a * Pos b
+-- swap_signs 0 a = Refl
+-- swap_signs a 0 = 
+--   rewrite sym pos0_neg0_equality in 
+--   rewrite right_MultZero (Pos a) in 
+--   rewrite right_MultZero (Neg a) in 
+--           Refl
+-- swap_signs (S 0) b = 
+--   rewrite left_MultPosOne (Neg b) in
+--   rewrite left_MultNegOne (Pos b) in
+--   Refl
+-- swap_signs (S (S k)) (S 0) = Refl
+-- swap_signs (S (S k)) (S (S j)) = rewrite swap_signs (S (S k)) (S j) in Refl
+--
+-- lift_nat_mult_prf : (a,b : Nat) -> (a * b = c * d) -> Pos a * Pos b = Pos c * Pos d
+-- lift_nat_mult_prf a b {c,d} prf = rewrite lift_pos_mult a b in rewrite prf in rewrite sym $ lift_pos_mult c d in Refl
+--
+-- int_mult_commutative : (a,b : PInteger) -> a * b = b * a
+-- int_mult_commutative (Pos k) (Pos j) = 
+--     rewrite lift_nat_mult_prf k j (nat_mult_commutes k j) in
+--       Refl
+-- int_mult_commutative (Neg k) (Neg j) = 
+--   rewrite same_sign_mult_eq k j in
+--   rewrite lift_nat_mult_prf k j (nat_mult_commutes k j) in
+--   rewrite same_sign_mult_eq j k in
+--   Refl
+--
+-- int_mult_commutative (Pos 0) (Neg j) = rewrite right_MultZero (Neg j) in Refl
+-- int_mult_commutative (Pos 1) (Neg j) = 
+--     rewrite left_MultPosOne (Neg j) in 
+--     rewrite right_MultPosOne (Neg j) in 
+--       Refl
+-- int_mult_commutative (Pos (S (S k))) (Neg 0) = Refl
+-- int_mult_commutative (Pos (S (S k))) (Neg 1) = Refl
+-- int_mult_commutative (Pos (S (S k))) (Neg (S (S j))) = 
+--   rewrite int_mult_commutative (Pos (S (S k))) (assert_smaller (Neg (S (S j))) $ Neg (S j)) in 
+--   rewrite mult_plus_s_pos (Neg (S j)) (S k) in
+--   rewrite sym $ associativity (Neg (S (S k))) (Neg (S j)) (Neg (S j) * Pos (S k)) in
+--   rewrite combineNeg (S (S k)) (S j) in
+--   rewrite plus_s_right_s k (S j) in
+--   rewrite plus_commutes (S k) (S (S j)) in
+--   rewrite sym $ combineNeg (S (S j)) (S k) in
+--   rewrite assert_total $ int_mult_commutative (Neg (S j)) (Pos (S k)) in 
+--   rewrite associativity (Neg (S (S j))) (Neg (S k)) (Pos (S k) * Neg (S j)) in
+--   rewrite swap_signs (S k) (S j) in
+--   rewrite sym $ mult_plus_s_pos (Neg (S k)) (S j) in
+--   rewrite assert_total $ int_mult_commutative (Neg (S k)) (Pos (S (S j))) in 
+--   rewrite swap_signs (S (S j)) (S k) in
+--   rewrite sym $ mult_plus_s_pos (Neg (S (S j))) (S k) in
+--         Refl
+--
+--
+-- int_mult_commutative (Neg 0) (Pos j) = 
+--   rewrite sym pos0_neg0_equality in 
+--   rewrite right_MultZero (Pos j) in 
+--       Refl
+-- int_mult_commutative (Neg 1) (Pos j) = 
+--   rewrite left_MultNegOne (Pos j) in
+--   rewrite right_MultNegOne (Pos j) in
+--   Refl
+-- int_mult_commutative (Neg (S (S k))) (Pos 0) = Refl
+-- int_mult_commutative (Neg (S (S k))) (Pos 1) = Refl
+-- int_mult_commutative (Neg (S (S k))) (Pos (S (S j))) = 
+--   rewrite sym $ swap_signs (S (S k)) (S (S j)) in
+--   rewrite swap_signs (S (S j)) (S (S k)) in
+--   rewrite assert_total $ int_mult_commutative (Pos (S (S k))) (Neg (S j)) in 
+--   rewrite mult_plus_s_pos (Neg (S j)) (S k) in
+--   rewrite sym $ associativity (Neg (S (S k))) (Neg (S j)) (Neg (S j) * Pos (S k)) in
+--   rewrite combineNeg (S (S k)) (S j) in
+--   rewrite plus_s_right_s k (S j) in
+--   rewrite plus_commutes (S k) (S (S j)) in
+--   rewrite sym $ combineNeg (S (S j)) (S k) in
+--   rewrite assert_total $ int_mult_commutative (Neg (S j)) (Pos (S k)) in 
+--   rewrite associativity (Neg (S (S j))) (Neg (S k)) (Pos (S k) * Neg (S j)) in
+--   rewrite swap_signs (S k) (S j) in
+--   rewrite sym $ mult_plus_s_pos (Neg (S k)) (S j) in
+--   rewrite assert_total $ int_mult_commutative (Neg (S k)) (Pos (S (S j))) in 
+--   rewrite swap_signs (S (S j)) (S k) in
+--   rewrite sym $ mult_plus_s_pos (Neg (S (S j))) (S k) in
+--         Refl
+--
+--
+-- problem : Group g => ((a : g) -> a <+> a = Prelude.Interfaces.neutral ) -> ((x,y : g) -> x <+> y = y <+> x)
+-- problem f x y = prop5
+--   where 
+--     prop1 : y <+> Prelude.Interfaces.neutral = y <+> (y <+> (x <+> (y <+> x)))
+--     prop1 = 
+--       rewrite sym $ associativity y x (y <+> x) in  
+--       rewrite f (y <+> x) in  
+--           Refl
+--
+--     prop3 : y = y <+> (y <+> (x <+> (y <+> x)))
+--     prop3 = sym $ trans (sym prop1) (fst $ identity y)
+--
+--     prop4 : y = (x <+> (y <+> x))
+--     prop4 = trans prop3 
+--           $ rewrite (sym $ associativity y y (x <+> (y <+> x))) in 
+--             rewrite f y in 
+--             rewrite snd $ identity (x <+> (y <+> x)) in
+--               Refl
+--     
+--     prop5 : x <+> y = y <+> x
+--     prop5 = 
+--       rewrite cong (x <+> ) prop4 in 
+--       rewrite sym $ associativity x x (y <+> x) in 
+--       rewrite f x in 
+--       rewrite snd (identity (y <+> x)) in 
+--         Refl
+--
+main : IO ()
+main = printLn "H"
