@@ -19,6 +19,17 @@ left_NegIdentity a =
       left_PosIdentity a
 
 export
+cancelAdd : (a : PInteger) -> a + negate a = 0
+cancelAdd (Pos 0) = Refl
+cancelAdd (Pos (S k)) = 
+  rewrite cancelAdd (assert_smaller (Pos (S k)) $ Pos k) in
+  Refl
+cancelAdd (Neg 0) = sym pos0_neg0_equality
+cancelAdd (Neg (S k)) = 
+  rewrite cancelAdd (assert_smaller (Neg (S k)) $ Neg k) in
+  Refl
+
+export
 combinePos : (a,b : Nat) -> Pos a + Pos b = Pos (a + b)
 combinePos a 0 = rewrite plusZeroRightNeutral a in Refl
 combinePos 0 b = left_PosIdentity (Pos b)
