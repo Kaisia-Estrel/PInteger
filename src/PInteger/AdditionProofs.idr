@@ -6,170 +6,158 @@ import Data.Nat
 %default total
 
 export
-left_PosIdentity : (a : PInteger) -> Pos Z + a = a
-left_PosIdentity (Pos 0) = Refl
-left_PosIdentity (Pos (S k)) = Refl
-left_PosIdentity (Neg 0) = pos0_neg0_equality
-left_PosIdentity (Neg (S k)) = Refl
+combineNegAdd : (a,b : Nat) -> NegS a + NegS b = NegS (S (a + b))
+combineNegAdd 0 b = Refl
+combineNegAdd (S k) b = Refl
 
-export
-left_NegIdentity : (a : PInteger) -> Neg Z + a = a
-left_NegIdentity a =  
-    rewrite sym pos0_neg0_equality in
-      left_PosIdentity a
-
-export
-cancelAdd : (a : PInteger) -> a + negate a = 0
-cancelAdd (Pos 0) = Refl
-cancelAdd (Pos (S k)) = 
-  rewrite cancelAdd (assert_smaller (Pos (S k)) $ Pos k) in
-  Refl
-cancelAdd (Neg 0) = sym pos0_neg0_equality
-cancelAdd (Neg (S k)) = 
-  rewrite cancelAdd (assert_smaller (Neg (S k)) $ Neg k) in
-  Refl
-
-export
-combinePos : (a,b : Nat) -> Pos a + Pos b = Pos (a + b)
-combinePos a 0 = rewrite plusZeroRightNeutral a in Refl
-combinePos 0 b = left_PosIdentity (Pos b)
-combinePos (S j) (S k) = Refl
-
-export
-combineNeg : (a,b : Nat) -> Neg a + Neg b = Neg (a + b)
-combineNeg a 0 = rewrite plusZeroRightNeutral a in Refl
-combineNeg 0 b = rewrite sym pos0_neg0_equality in 
-                 rewrite left_PosIdentity (Neg b) in 
-                          Refl
-combineNeg (S a) (S b) = Refl
-
-export
-inverse_identity : (a : Nat) -> Pos a + Neg a = Pos Z
-inverse_identity 0 = Refl
-inverse_identity (S k) = inverse_identity k
-
-export
+export 
 intPlusCommutative : (a,b : PInteger) -> a + b = b + a
-intPlusCommutative (Pos k) (Pos j) = 
-  rewrite combinePos k j in
-  rewrite combinePos j k in
-  rewrite plusCommutative j k in
-  Refl
-intPlusCommutative (Neg k) (Neg j) = 
-  rewrite combineNeg k j in
-  rewrite combineNeg j k in
-  rewrite plusCommutative j k in
-  Refl
-intPlusCommutative (Pos k) (Neg j) = posNegCommutative k j
+intPlusCommutative (Pos a) (Pos b) = rewrite plusCommutative a b in Refl
+intPlusCommutative (NegS a) (NegS b) = 
+  rewrite combineNegAdd a b in 
+  rewrite plusCommutative a b in 
+  rewrite sym $ combineNegAdd b a in 
+            Refl
+intPlusCommutative (Pos a) (NegS b) = posNegCommutative a b
   where 
-    posNegCommutative : (n,m : Nat) -> Pos n + Neg m = Neg m + Pos n
-    posNegCommutative 0 m = rewrite left_PosIdentity (Neg m) in Refl
-    posNegCommutative (S i) 0 = Refl
-    posNegCommutative (S n') (S m') = rewrite posNegCommutative n' m' in Refl
-intPlusCommutative (Neg k) (Pos j) = negPosCommutative k j
+    posNegCommutative : (n,m : Nat) -> Pos n + NegS m = NegS m + Pos n
+    posNegCommutative 0 0 = Refl
+    posNegCommutative (S n) 0 = Refl
+    posNegCommutative 0 (S m) = Refl
+    posNegCommutative (S n) (S m) = 
+      rewrite posNegCommutative n m in
+      Refl
+intPlusCommutative (NegS a) (Pos b) = negPosCommutative a b
   where 
-    negPosCommutative : (n,m : Nat) -> Neg n + Pos m = Pos m + Neg n
-    negPosCommutative 0 m = rewrite left_NegIdentity (Pos m) in Refl
-    negPosCommutative (S i) 0 = Refl
-    negPosCommutative (S n') (S m') = rewrite negPosCommutative n' m' in Refl
+    negPosCommutative : (n,m : Nat) -> NegS n + Pos m = Pos m + NegS n
+    negPosCommutative 0 0 = Refl
+    negPosCommutative (S k) 0 = Refl
+    negPosCommutative 0 (S m) =  Refl
+    negPosCommutative (S n) (S m) = 
+        rewrite negPosCommutative n m in
+          Refl
 
-exchange_s_pos : (a,b : Nat) -> Pos a + Pos (S b) = Pos (S a) + Pos b
-exchange_s_pos a b = 
-  rewrite combinePos (S a) b in
-  rewrite combinePos a (S b) in
+export
+intPlusLeftNeutral : (a : PInteger) -> 0 + a = a
+intPlusLeftNeutral (Pos k) = Refl
+intPlusLeftNeutral (NegS k) = Refl
+
+export
+intPlusRightNeutral : (a : PInteger) -> a + 0 = a
+intPlusRightNeutral (Pos k) = rewrite plusZeroRightNeutral k in Refl
+intPlusRightNeutral (NegS 0) = Refl
+intPlusRightNeutral (NegS (S k)) = Refl
+
+negPosPos_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> NegS a + (Pos b + Pos c) = (NegS a + Pos b) + Pos c
+negPosPos_Assoc 0 b c = case b of { 0 => Refl ; S k => Refl }
+negPosPos_Assoc (S k) 0 c = Refl
+negPosPos_Assoc (S k) (S j) c = negPosPos_Assoc k j c
+
+posPosNeg_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> Pos a + (Pos b + NegS c) = (Pos a + Pos b) + NegS c
+posPosNeg_Assoc 0 b c = rewrite intPlusLeftNeutral (Pos b + NegS c) in Refl
+posPosNeg_Assoc a 0 c = rewrite plusZeroRightNeutral a in Refl
+posPosNeg_Assoc a (S b) 0 = rewrite sym $ plusSuccRightSucc a b in Refl
+posPosNeg_Assoc a (S b) (S c) = 
+  rewrite posPosNeg_Assoc a b c in 
+  rewrite sym $ plusSuccRightSucc a b in 
+      Refl
+
+posNegPos_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> Pos a + (NegS b + Pos c) = (Pos a + NegS b) + Pos c
+posNegPos_Assoc a b c = 
+  rewrite intPlusCommutative (Pos a) (NegS b) in
+  rewrite intPlusCommutative (NegS b) (Pos c) in
+  rewrite sym $ negPosPos_Assoc b a c in
+  rewrite posPosNeg_Assoc a c b in
+  rewrite intPlusCommutative (Pos (a + c)) (NegS b) in
+  Refl
+
+negNegPos_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> NegS a + (NegS b + Pos c) = (NegS a + NegS b) + Pos c
+negNegPos_Assoc a 0 0 =  rewrite (intPlusRightNeutral (NegS a + NegS 0)) in Refl
+negNegPos_Assoc a (S b) 0 = rewrite (intPlusRightNeutral (NegS a + NegS (S b))) in Refl
+negNegPos_Assoc a 0 (S c) = rewrite combineNegAdd a 0 in rewrite plusZeroRightNeutral a in Refl
+negNegPos_Assoc a (S b) (S c) = 
+  rewrite negNegPos_Assoc a b c in 
+  rewrite combineNegAdd a b in 
+  rewrite combineNegAdd a (S b) in 
   rewrite plusSuccRightSucc a b in
+          Refl
+
+posNegNeg_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> Pos a + (NegS b + NegS c) = (Pos a + NegS b) + NegS c
+posNegNeg_Assoc 0 b c = rewrite intPlusLeftNeutral (NegS b + NegS c) in Refl
+posNegNeg_Assoc (S a) 0 c = Refl
+posNegNeg_Assoc (S a) (S b) c = 
+  rewrite sym $ posNegNeg_Assoc a b c in
+  rewrite combineNegAdd b c in
   Refl
 
-exchange_s_neg : (a,b : Nat) -> Neg a + Neg (S b) = Neg (S a) + Neg b
-exchange_s_neg a b = 
-  rewrite combineNeg (S a) b in
-  rewrite combineNeg a (S b) in
-  rewrite plusSuccRightSucc a b in
-  Refl
-
-pos_pos_neg_assoc : (n,m,o : Nat) -> (Pos n + Pos m) + Neg o = Pos n + (Pos m + Neg o)
-pos_pos_neg_assoc n m 0 = Refl
-pos_pos_neg_assoc n 0 (S o') = Refl
-pos_pos_neg_assoc 0 (S m') (S o') = rewrite left_PosIdentity (Pos m' + Neg o') in Refl
-pos_pos_neg_assoc (S n') (S m') (S o') = 
-  rewrite sym $ pos_pos_neg_assoc (S n') m' o' in
-  rewrite combinePos (S n') m' in
-  rewrite plusSuccRightSucc n' m' in
-  Refl
-
-neg_neg_pos_assoc : (n,m,o : Nat) -> (Neg n + Neg m) + Pos o = Neg n + (Neg m + Pos o)
-neg_neg_pos_assoc n m 0 = Refl
-neg_neg_pos_assoc n 0 (S k) = Refl
-neg_neg_pos_assoc 0 (S j) (S k) = rewrite left_NegIdentity (Neg j + Pos k) in Refl
-neg_neg_pos_assoc (S i) (S j) (S k) = 
-  rewrite sym $ neg_neg_pos_assoc (S i) j k in
-  rewrite sym $ plusSuccRightSucc i j in
-  rewrite combineNeg (S i) j in
-  Refl
-
-neg_pos_pos_assoc : (n,m,o : Nat) -> (Neg n + Pos m) + Pos o = Neg n + (Pos m + Pos o)
-neg_pos_pos_assoc n m 0 = Refl
-neg_pos_pos_assoc n 0 (S k) = Refl
-neg_pos_pos_assoc 0 (S j) (S k) = Refl
-neg_pos_pos_assoc (S i) (S j) (S k) = 
-  rewrite neg_pos_pos_assoc i j (S k) in
-  rewrite combinePos j (S k) in
-  Refl
-
-pos_neg_pos_assoc : (n,m,o : Nat) -> (Pos n + Neg m) + Pos o = Pos n + (Neg m + Pos o)
-pos_neg_pos_assoc n 0 o = rewrite left_NegIdentity (Pos o) in Refl
-pos_neg_pos_assoc 0 (S m') o = rewrite left_PosIdentity (Neg (S m') + Pos o) in Refl
-pos_neg_pos_assoc (S n') (S m') 0 = Refl
-pos_neg_pos_assoc (S n') (S m') (S o') = 
-  rewrite intPlusCommutative (Pos n') (Neg m') in
-  rewrite intPlusCommutative (Neg m') (Pos o') in
-  rewrite neg_pos_pos_assoc m' n' (S o') in
-  rewrite sym $ pos_pos_neg_assoc (S n') o' m' in
-  rewrite exchange_s_pos n' o' in
-  rewrite intPlusCommutative (Neg m') (Pos (S n') + Pos o') in
-  Refl
-
-pos_neg_neg_assoc : (k,j,i : Nat) -> (Pos k + Neg j) + Neg i = Pos k + (Neg j + Neg i)
-pos_neg_neg_assoc k j 0 = Refl
-pos_neg_neg_assoc k 0 (S i) = Refl
-pos_neg_neg_assoc 0 (S j) (S i) = Refl
-pos_neg_neg_assoc (S k) (S j) (S i) = 
-  rewrite pos_neg_neg_assoc k j (S i) in
-  rewrite combineNeg j (S i) in
-  Refl
-
-neg_pos_neg_assoc : (k,j,i : Nat) -> (Neg k + Pos j) + Neg i = Neg k + (Pos j + Neg i)
-neg_pos_neg_assoc k j 0 = Refl
-neg_pos_neg_assoc k 0 (S i) = Refl
-neg_pos_neg_assoc 0 (S j) (S i) = rewrite left_NegIdentity (Pos j + Neg i) in Refl
-neg_pos_neg_assoc (S k) (S j) (S i) = 
-  rewrite intPlusCommutative (Neg k) (Pos j) in
-  rewrite intPlusCommutative (Pos j) (Neg i) in
-  rewrite pos_neg_neg_assoc j k (S i) in
-  rewrite sym $ neg_neg_pos_assoc (S k) i j in
-  rewrite sym $ exchange_s_neg k i in
-  rewrite intPlusCommutative (Pos j) (Neg k + Neg (S i)) in
+negPosNeg_Assoc : (a : Nat) -> (b : Nat) -> (c : Nat) -> NegS a + (Pos b + NegS c) = (NegS a + Pos b) + NegS c
+negPosNeg_Assoc a b c =
+  rewrite intPlusCommutative (Pos b) (NegS c) in
+  rewrite intPlusCommutative (NegS a) (Pos b) in
+  rewrite negNegPos_Assoc a c b in 
+  rewrite sym $ posNegNeg_Assoc b a c in
+  rewrite intPlusCommutative (NegS a + NegS c) (Pos b) in
   Refl
 
 export
-intPlusAssociative : (a, b, c : PInteger) -> (a + b) + c = a + (b + c)
-intPlusAssociative (Pos k) (Pos j) (Pos i) = 
-  rewrite combinePos k j in
-  rewrite combinePos (k+j) i in
-  rewrite combinePos j i in
-  rewrite combinePos k (j+i) in
-  rewrite plusAssociative k j i in
+intPlusAssociative : (a,b,c : PInteger) -> a + (b + c) = (a + b) + c
+intPlusAssociative (Pos a) (Pos b) (Pos c) = rewrite plusAssociative a b c in Refl
+intPlusAssociative (NegS a) (Pos b) (Pos c) = negPosPos_Assoc a b c
+intPlusAssociative (Pos a) (NegS b) (Pos c) = posNegPos_Assoc a b c
+intPlusAssociative (NegS a) (NegS b) (Pos c) = negNegPos_Assoc a b c
+intPlusAssociative (Pos a) (Pos b) (NegS c) = posPosNeg_Assoc a b c
+intPlusAssociative (NegS a) (Pos b) (NegS c) = negPosNeg_Assoc a b c
+intPlusAssociative (Pos a) (NegS b) (NegS c) = posNegNeg_Assoc a b c
+intPlusAssociative (NegS a) (NegS b) (NegS c) = 
+  rewrite combineNegAdd a b in
+  rewrite combineNegAdd b c in
+  rewrite combineNegAdd a (S (b + c)) in
+  rewrite sym $ plusSuccRightSucc a (b + c) in
+  rewrite plusAssociative a b c in
   Refl
-intPlusAssociative (Pos k) (Pos j) (Neg i) = pos_pos_neg_assoc k j i
-intPlusAssociative (Pos k) (Neg j) (Pos i) = pos_neg_pos_assoc k j i
-intPlusAssociative (Pos k) (Neg j) (Neg i) = pos_neg_neg_assoc k j i
-intPlusAssociative (Neg k) (Pos j) (Pos i) = neg_pos_pos_assoc k j i
-intPlusAssociative (Neg k) (Pos j) (Neg i) = neg_pos_neg_assoc k j i
-intPlusAssociative (Neg k) (Neg j) (Pos i) = neg_neg_pos_assoc k j i
-intPlusAssociative (Neg k) (Neg j) (Neg i) = 
-  rewrite combineNeg k j in
-  rewrite combineNeg (k+j) i in
-  rewrite combineNeg j i in
-  rewrite combineNeg k (j+i) in
-  rewrite plusAssociative k j i in
-    Refl
+
+export 
+intPlusRightIdentity : (a : PInteger) -> a + 0 = a
+intPlusRightIdentity (Pos k) = rewrite plusZeroRightNeutral k in Refl
+intPlusRightIdentity (NegS 0) = Refl
+intPlusRightIdentity (NegS (S k)) = Refl
+
+
+export
+intPlusLeftIdentity : (a : PInteger) -> 0 + a = a
+intPlusLeftIdentity (Pos k) = Refl
+intPlusLeftIdentity (NegS k) = Refl
+
+distirbuteNegation_rhs_8 : (a : Nat) -> (b : Nat) -> neg (NegS a + Pos (S b)) = Pos (S a) + NegS b
+distirbuteNegation_rhs_8 0 b = case b of { 0 => Refl ; S k => Refl }
+distirbuteNegation_rhs_8 (S k) 0 = case k of { 0 => Refl ; S k => Refl }
+distirbuteNegation_rhs_8 (S k) (S j) = distirbuteNegation_rhs_8 k j
+
+distirbuteNegation_rhs_7 : (k : Nat) -> (b : Nat) -> neg (Pos (S k) + NegS b) = NegS k + Pos (S b)
+distirbuteNegation_rhs_7 0 b = case b of { 0 => Refl ; S k => Refl }
+distirbuteNegation_rhs_7 (S k) 0 = case k of { 0 => Refl ; S k => Refl }
+distirbuteNegation_rhs_7 (S k) (S j) = distirbuteNegation_rhs_7 k j
+
+export 
+distributeNegation : (a,b : PInteger) -> -(a + b) = -a + -b
+distributeNegation (Pos 0) (Pos b) =  rewrite intPlusLeftIdentity (neg (Pos b)) in Refl
+distributeNegation (Pos (S k)) (Pos 0) = 
+  rewrite plusZeroRightNeutral k in 
+  rewrite intPlusRightIdentity (NegS k)  in
+  Refl
+distributeNegation (Pos (S a)) (Pos (S b)) = 
+  rewrite combineNegAdd a b in
+  rewrite plusSuccRightSucc a b in
+  Refl
+distributeNegation (Pos 0) (NegS b) = Refl
+distributeNegation (NegS a) (Pos (S b)) = distirbuteNegation_rhs_8 a b
+distributeNegation (Pos (S k)) (NegS b) = distirbuteNegation_rhs_7 k b
+distributeNegation (NegS a) (Pos 0) = 
+  rewrite plusZeroRightNeutral a in 
+  rewrite intPlusRightIdentity (NegS a)  in
+  Refl
+distributeNegation (NegS a) (NegS b) = 
+  rewrite combineNegAdd a b in
+  rewrite plusSuccRightSucc a b in
+  Refl
+

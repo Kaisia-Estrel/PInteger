@@ -7,80 +7,53 @@ import Data.Nat
 public export 
 data PInteger : Type where
   Pos : Nat -> PInteger
-  Neg : Nat -> PInteger
+  NegS : Nat -> PInteger
 
 export 
-getNat : PInteger -> Nat
-getNat (Pos n) = n
-getNat (Neg n) = n
+toNat : PInteger -> Nat
+toNat (Pos n) = n
+toNat (NegS n) = S n
 
 export 
 Show PInteger where
   show (Pos n) = show n
-  show (Neg n) = "-" ++ show n
+  show (NegS n) = "-" ++ show (S n)
 
-export 
-pos0_neg0_equality : Pos Z = Neg Z
-pos0_neg0_equality = believe_me ()
-  -- Neg Z and Pos Z arent defined with the same construction 
-  -- so it's impossible to infer that they are equal
+neg : PInteger -> PInteger
+neg (Pos Z) = Pos Z
+neg (Pos (S k)) = NegS k
+neg (NegS k) = Pos (S k)
 
 export 
 Num PInteger where
   fromInteger x = case compareInteger x 0 of 
                        GT => Pos (fromInteger x)
                        EQ => Pos 0
-                       LT => Neg (fromInteger (-x))
-  n1 + Pos Z = n1
-  n1 + Neg Z = n1
-  Pos Z + n2 = n2
-  Neg Z + n2 = n2
+                       LT => NegS (fromInteger ((-x) - 1))
+  
+  (Pos a) + (Pos b) = Pos (a + b)
 
-  Pos n1 + Pos n2 = Pos (n1 + n2)
-  Neg n1 + Neg n2 = Neg (n1 + n2)
+  (Pos (S a)) + (NegS (S b)) = assert_smaller (Pos (S a)) (Pos a) + NegS b
 
-  -- I don't know why this isnt recognized as total
-  Neg (S n1) + Pos (S n2) = Neg n1 + assert_smaller (Pos (S n2)) (Pos n2)
-  Pos (S n1) + Neg (S n2) = Pos n1 + assert_smaller (Neg (S n2)) (Neg n2)
+  (Pos (S a)) + (-1) = Pos a
+  (-1) + (Pos (S b)) = Pos b
+  0 + b = b
+  a + 0 = a
 
-  Pos 0 * x = Pos 0
-  Neg 0 * x = Pos 0
-  x * Pos 0 = Pos 0
-  x * Neg 0 = Pos 0
+  (NegS (S a)) + (Pos (S b)) = assert_smaller (NegS (S a)) (NegS a) + Pos b
+  (NegS a) + (NegS b) = NegS (S (a + b))
 
-  Pos 1 * x = x
-  x * Pos 1 = x
-
-  Neg 1 * Pos x = Neg x
-  Neg 1 * Neg x = Pos x
-
-  Pos x * Neg 1 = Neg x
-  Neg x * Neg 1 = Pos x
-
-  x * Pos (S k) = x + (x * assert_smaller (Pos (S k)) (Pos k))
-  Pos j * Neg (S k) = assert_total $ Neg j + (Pos j * Neg k)
-  Neg j * Neg k = assert_total $ Pos j * Pos k
+  (Pos a)   * (Pos b)   = Pos (a * b)
+  (Pos a)   * (NegS b)  = neg (Pos (a * S b))
+  (NegS a)  * (Pos b)   = neg (Pos (S a * b))
+  (NegS a)  * (NegS b)  = Pos (S a * S b)
 
 export 
 Neg PInteger where
-  negate (Pos x) = Neg x
-  negate (Neg x) = Pos x
+  negate = neg
   x - y = x + negate y
 
 export 
 Abs PInteger where
-  abs (Neg x) = Pos x
+  abs (NegS x) = Pos (S x)
   abs x = x
-
-export 
-Integral PInteger where
-  div (Pos k) (Pos j) = Pos (div k j)
-  div (Pos k) (Neg j) = Neg (div k j)
-  div (Neg k) (Pos j) = Neg (div k j)
-  div (Neg k) (Neg j) = Pos (div k j)
-  mod x y = Pos (getNat x `mod` getNat y)
-
-export 
-integerToEither : PInteger -> Either Nat Nat
-integerToEither (Neg s) = Left s
-integerToEither (Pos s) = Right s
